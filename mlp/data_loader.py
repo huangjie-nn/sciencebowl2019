@@ -9,28 +9,80 @@ from sklearn.svm import NuSVR, SVR
 from sklearn.metrics import mean_absolute_error
 pd.options.display.precision = 15
 from collections import defaultdict
+import lightgbm as lgb
+import xgboost as xgb
+import catboost as cat
+import time
+from collections import Counter
+import datetime
+from catboost import CatBoostRegressor
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import StratifiedKFold, KFold, RepeatedKFold, GroupKFold, GridSearchCV, train_test_split, TimeSeriesSplit, RepeatedStratifiedKFold
+from sklearn import metrics
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn import linear_model
+import gc
+import seaborn as sns
+import warnings
+warnings.filterwarnings("ignore")
+from bayes_opt import BayesianOptimization
+import eli5
+import shap
+from IPython.display import HTML
+
+import json
+import altair as alt
+from category_encoders.ordinal import OrdinalEncoder
+import networkx as nx
+import matplotlib.pyplot as plt
+from typing import List
+
+import os
+import time
+import datetime
+import json
+import gc
+from numba import jit
+
+import numpy as np
+import pandas as pd
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+from tqdm import tqdm_notebook
+
+import lightgbm as lgb
+import xgboost as xgb
+from catboost import CatBoostRegressor, CatBoostClassifier
+from sklearn import metrics
+from typing import Any
+from itertools import product
+pd.set_option('max_rows', 500)
+import re
+from tqdm import tqdm
+from joblib import Parallel, delayed
 
 
 def read_data():
 
     print('Reading train.csv file....')
-    train = pd.read_csv('../data/train.csv')
+    train = pd.read_csv('data/train.csv')
     print('Training.csv file have {} rows and {} columns'.format(train.shape[0], train.shape[1]))
 
     print('Reading test.csv file....')
-    test = pd.read_csv('../data/test.csv')
+    test = pd.read_csv('data/test.csv')
     print('Test.csv file have {} rows and {} columns'.format(test.shape[0], test.shape[1]))
 
     print('Reading train_labels.csv file....')
-    train_labels = pd.read_csv('../data/train_labels.csv')
+    train_labels = pd.read_csv('data/train_labels.csv')
     print('Train_labels.csv file have {} rows and {} columns'.format(train_labels.shape[0], train_labels.shape[1]))
 
     print('Reading specs.csv file....')
-    specs = pd.read_csv('../data/specs.csv')
+    specs = pd.read_csv('data/specs.csv')
     print('Specs.csv file have {} rows and {} columns'.format(specs.shape[0], specs.shape[1]))
 
     print('Reading sample_submission.csv file....')
-    sample_submission = pd.read_csv('../data/sample_submission.csv')
+    sample_submission = pd.read_csv('data/sample_submission.csv')
     print('Sample_submission.csv file have {} rows and {} columns'.format(sample_submission.shape[0], sample_submission.shape[1]))
     return train, test, train_labels, specs, sample_submission
 
@@ -67,7 +119,7 @@ def encode_title(train, test, train_labels):
     return train, test, train_labels, win_code, list_of_titles, list_of_event_code, activities_labels, assess_titles, list_of_event_id, list_title_event_code
 
 
-def get_data(user_sample, test_set=False):
+def get_data(user_sample, assess_titles,list_of_event_code,list_of_event_id,activities_labels,list_title_event_code,win_code,test_set=False):
     '''
     The user_sample is a DataFrame from train or test where the only one 
     installation_id is filtered
@@ -95,7 +147,7 @@ def get_data(user_sample, test_set=False):
     event_code_count: Dict[str, int] = {ev: 0 for ev in list_of_event_code}
     event_id_count: Dict[str, int] = {eve: 0 for eve in list_of_event_id}
     title_count: Dict[str, int] = {eve: 0 for eve in activities_labels.values()} 
-    title_event_code_count: Dict[str, int] = {t_eve: 0 for t_eve in all_title_event_code}
+    title_event_code_count: Dict[str, int] = {t_eve: 0 for t_eve in list_title_event_code}
     
     # itarates through each session of one instalation_id
     for i, session in user_sample.groupby('game_session', sort=False):
@@ -203,22 +255,16 @@ def get_data(user_sample, test_set=False):
     # in the train_set, all assessments goes to the dataset
     return all_assessments
 
-def get_train_and_test(train, test):
+def get_train_and_test(train,test, assess_titles,list_of_event_code,list_of_event_id,activities_labels,list_title_event_code,win_code):
     compiled_train = []
     compiled_test = []
     for i, (ins_id, user_sample) in tqdm(enumerate(train.groupby('installation_id', sort = False)), total = 17000):
-        compiled_train += get_data(user_sample)
+        compiled_train += get_data(user_sample, assess_titles,list_of_event_code,list_of_event_id,activities_labels,list_title_event_code,win_code)
     for ins_id, user_sample in tqdm(test.groupby('installation_id', sort = False), total = 1000):
-        test_data = get_data(user_sample, test_set = True)
+        test_data = get_data(user_sample, assess_titles,list_of_event_code,list_of_event_id,activities_labels,list_title_event_code,win_code,test_set = True)
         compiled_test.append(test_data)
     reduce_train = pd.DataFrame(compiled_train)
     reduce_test = pd.DataFrame(compiled_test)
     categoricals = ['session_title']
     return reduce_train, reduce_test, categoricals
 
-# read data
-train, test, train_labels, specs, sample_submission = read_data()
-# get usefull dict with maping encode
-train, test, train_labels, win_code, list_of_user_activities, list_of_event_code, activities_labels, assess_titles, list_of_event_id, all_title_event_code = encode_title(train, test, train_labels)
-# tranform function to get the train and test set
-reduce_train, reduce_test, categoricals = get_train_and_test(train, test)

@@ -1,3 +1,5 @@
+import pandas as pd
+
 class RegressorModel(object):
     """
     A wrapper class for classification models.

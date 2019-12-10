@@ -17,4 +17,3 @@ def preprocess(reduce_train, reduce_test):
    
     return reduce_train, reduce_test, features
 # call feature engineering function
-reduce_train, reduce_test, features = preprocess(reduce_train, reduce_test)

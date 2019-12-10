@@ -1,3 +1,6 @@
+from sklearn.base import BaseEstimator, TransformerMixin
+from category_encoders.ordinal import OrdinalEncoder
+
 class MainTransformer(BaseEstimator, TransformerMixin):
 
     def __init__(self, convert_cyclical: bool = False, create_interactions: bool = False, n_interactions: int = 20):
