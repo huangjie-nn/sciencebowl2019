@@ -1,4 +1,5 @@
 from sklearn.base import BaseEstimator, TransformerMixin
+import numpy as np
 
 def qwk(a1, a2):
     """

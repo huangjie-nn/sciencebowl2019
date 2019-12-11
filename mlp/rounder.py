@@ -1,5 +1,9 @@
 from functools import partial
 import scipy as sp
+import pandas as pd
+import numpy as np
+from mlp import metrics
+
 class OptimizedRounder(object):
     """
     An optimizer for rounding thresholds
@@ -20,7 +24,7 @@ class OptimizedRounder(object):
         """
         X_p = pd.cut(X, [-np.inf] + list(np.sort(coef)) + [np.inf], labels = [0, 1, 2, 3])
 
-        return -qwk(y, X_p)
+        return -metrics.qwk(y, X_p)
 
     def fit(self, X, y):
         """

@@ -1,4 +1,4 @@
-def preprocess(reduce_train, reduce_test):
+def preprocess(reduce_train, reduce_test,assess_titles):
     for df in [reduce_train, reduce_test]:
         df['installation_session_count'] = df.groupby(['installation_id'])['Clip'].transform('count')
         df['installation_duration_mean'] = df.groupby(['installation_id'])['duration_mean'].transform('mean')

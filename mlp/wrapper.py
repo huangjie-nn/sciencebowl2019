@@ -1,3 +1,8 @@
+import lightgbm as lgb
+import catboost as cat
+import xgboost as xgb
+from mlp import metrics
+
 class LGBWrapper_regr(object):
     """
     A wrapper for lightgbm model so that we will have a single api for various models.
@@ -8,7 +13,7 @@ class LGBWrapper_regr(object):
 
     def fit(self, X_train, y_train, X_valid=None, y_valid=None, X_holdout=None, y_holdout=None, params=None):
         if params['objective'] == 'regression':
-            eval_metric = eval_qwk_lgb_regr
+            eval_metric = metrics.eval_qwk_lgb_regr
         else:
             eval_metric = 'auc'
 
@@ -77,7 +82,7 @@ class LGBWrapper(object):
             categorical_columns = 'auto'
 
         self.model.fit(X=X_train, y=y_train,
-                       eval_set=eval_set, eval_names=eval_names, eval_metric=eval_qwk_lgb,
+                       eval_set=eval_set, eval_names=eval_names, eval_metric=metrics.eval_qwk_lgb,
                        verbose=params['verbose'], early_stopping_rounds=params['early_stopping_rounds'],
                        categorical_feature=categorical_columns)
 
@@ -156,7 +161,7 @@ class XGBWrapper(object):
             eval_set.append((X_holdout, y_holdout))
 
         self.model.fit(X=X_train, y=y_train,
-                       eval_set=eval_set, eval_metric=eval_qwk_xgb,
+                       eval_set=eval_set, eval_metric=metrics.eval_qwk_xgb,
                        verbose=params['verbose'], early_stopping_rounds=params['early_stopping_rounds'])
 
         scores = self.model.evals_result()

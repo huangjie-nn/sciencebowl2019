@@ -1,5 +1,9 @@
 from sklearn.base import BaseEstimator, TransformerMixin
 from category_encoders.ordinal import OrdinalEncoder
+import copy
+import numpy as np
+
+
 
 class MainTransformer(BaseEstimator, TransformerMixin):
 
