@@ -46,7 +46,8 @@ class LGBWrapper_regr(object):
         self.best_score_ = self.model.best_score_
         self.feature_importances_ = self.model.feature_importances_
 
-    def predict(self, X_test):
+    def predict_proba(self, X_test):
+
         return self.model.predict(X_test, num_iteration=self.model.best_iteration_)
 
 

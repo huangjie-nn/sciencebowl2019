@@ -122,7 +122,7 @@ class RegressorModel(object):
             if self.oof.shape[0] != len(X):
                 self.oof = np.zeros((X.shape[0], self.oof.shape[1]))
             if not adversarial:
-                self.oof[valid_index] = model.predict(X_valid).reshape(-1, n_target)
+                self.oof[valid_index] = model.predict_proba(X_valid).reshape(-1, n_target)
 
             fold_importance = pd.DataFrame(list(zip(X_train.columns, model.feature_importances_)),
                                            columns=['feature', 'importance'])
@@ -176,6 +176,7 @@ class RegressorModel(object):
         for d in datasets:
             scores = [v['scores'][d][self.eval_metric] for k, v in self.folds_dict.items()]
             print(f"CV mean score on {d}: {np.mean(scores):.4f} +/- {np.std(scores):.4f} std.")
+
             self.scores[d] = np.mean(scores)
 
     def predict(self, X_test, averaging: str = 'usual'):
@@ -197,7 +198,7 @@ class RegressorModel(object):
             if self.cols_to_drop is not None:
                 cols_to_drop = [col for col in self.cols_to_drop if col in X_t.columns]
                 X_t = X_t.drop(cols_to_drop, axis=1)
-            y_pred = self.models[i].predict(X_t[self.folds_dict[i]['columns']]).reshape(-1, full_prediction.shape[1])
+            y_pred = self.models[i].predict_proba(X_t[self.folds_dict[i]['columns']]).reshape(-1, full_prediction.shape[1])
 
             # if case transformation changes the number of the rows
             if full_prediction.shape[0] != len(y_pred):
